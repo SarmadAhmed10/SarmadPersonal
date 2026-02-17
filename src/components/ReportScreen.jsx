@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SECTIONS, CONDITION_COLORS, CONDITION_BG } from '../constants'
+import { CHECKLIST_CATEGORIES, getCategoryScore } from '../checklistConstants'
 import { generatePDF } from '../utils/pdfGenerator'
 
 function getScoreStyle(score) {
@@ -8,17 +9,22 @@ function getScoreStyle(score) {
   return { bg: '#dc2626', color: '#fff', badge: '#fecaca', badgeText: '#991b1b', label: 'Needs Attention' }
 }
 
+function scorePill(score) {
+  if (score >= 85) return { bg: '#dcfce7', color: '#15803d' }
+  if (score >= 70) return { bg: '#fef9c3', color: '#854d0e' }
+  return { bg: '#fee2e2', color: '#991b1b' }
+}
+
 export default function ReportScreen({ state, onNavigate, onNewInspection }) {
   const [generating, setGenerating] = useState(false)
-  const { carDetails, sections, aiScore } = state
+  const { carDetails, sections, checklist, aiScore } = state
   const style = getScoreStyle(aiScore ?? 0)
 
   const handleDownloadPDF = async () => {
     setGenerating(true)
-    // Small delay so spinner shows before heavy PDF work blocks the thread
     await new Promise((r) => setTimeout(r, 80))
     try {
-      await generatePDF({ carDetails, sections, aiScore })
+      await generatePDF({ carDetails, sections, checklist, aiScore })
     } catch (err) {
       console.error('PDF generation error:', err)
       alert('PDF generation failed. Please try again.')
@@ -38,7 +44,7 @@ export default function ReportScreen({ state, onNavigate, onNewInspection }) {
             <div className="logo-sub">AryaInspectionService</div>
           </div>
         </div>
-        <div className="app-bar-step">Step 4/4</div>
+        <div className="app-bar-step">Step 5/5</div>
       </div>
 
       <div className="screen-body">
@@ -50,10 +56,7 @@ export default function ReportScreen({ state, onNavigate, onNewInspection }) {
               <span className="score-number">{aiScore}</span>
               <span className="score-denom"> /100</span>
             </div>
-            <div
-              className="score-badge"
-              style={{ background: style.badge, color: style.badgeText }}
-            >
+            <div className="score-badge" style={{ background: style.badge, color: style.badgeText }}>
               {style.label}
             </div>
           </div>
@@ -94,9 +97,9 @@ export default function ReportScreen({ state, onNavigate, onNewInspection }) {
             </div>
           </div>
 
-          {/* Section Summary */}
+          {/* Photo section summary */}
           <div className="report-section-summary">
-            <div className="summary-title">Inspection Breakdown</div>
+            <div className="summary-title">Photo Inspection Breakdown</div>
             {SECTIONS.map((section) => {
               const sData = sections[section.id]
               const condColor = CONDITION_COLORS[sData.condition] || '#2563eb'
@@ -105,13 +108,28 @@ export default function ReportScreen({ state, onNavigate, onNewInspection }) {
                 <div key={section.id} className="summary-row">
                   <span className="summary-row-icon">{section.icon}</span>
                   <span className="summary-row-name">{section.name}</span>
-                  <span
-                    className="condition-pill"
-                    style={{ background: condBg, color: condColor }}
-                  >
+                  <span className="condition-pill" style={{ background: condBg, color: condColor }}>
                     {sData.condition}
                   </span>
                   <span className="photos-count">{sData.photos.length}📷</span>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Checklist category scores */}
+          <div className="report-section-summary">
+            <div className="summary-title">Checklist Category Scores</div>
+            {CHECKLIST_CATEGORIES.map((cat) => {
+              const score = getCategoryScore(cat, checklist)
+              const pill = scorePill(score)
+              return (
+                <div key={cat.id} className="summary-row">
+                  <span className="summary-row-icon">{cat.icon}</span>
+                  <span className="summary-row-name">{cat.name}</span>
+                  <span className="condition-pill" style={{ background: pill.bg, color: pill.color }}>
+                    {score}%
+                  </span>
                 </div>
               )
             })}
@@ -144,7 +162,6 @@ export default function ReportScreen({ state, onNavigate, onNewInspection }) {
         </div>
       </div>
 
-      {/* Generating overlay */}
       {generating && (
         <div className="generating-overlay">
           <div className="generating-spinner" />

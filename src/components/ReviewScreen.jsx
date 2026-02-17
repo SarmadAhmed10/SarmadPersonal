@@ -18,7 +18,7 @@ export default function ReviewScreen({ state, onUpdateSection, onRemovePhoto, on
             <div className="logo-sub">Confirm conditions and notes</div>
           </div>
         </div>
-        <div className="app-bar-step">Step 3/4</div>
+        <div className="app-bar-step">Step 4/5</div>
       </div>
 
       <div className="screen-body">
@@ -132,7 +132,7 @@ export default function ReviewScreen({ state, onUpdateSection, onRemovePhoto, on
         <button
           className="btn btn-secondary"
           style={{ width: 'auto', flex: '0 0 auto', padding: '0 18px' }}
-          onClick={() => onNavigate('sections')}
+          onClick={() => onNavigate('checklist')}
         >
           ← Back
         </button>

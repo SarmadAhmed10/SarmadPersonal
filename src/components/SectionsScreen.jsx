@@ -22,9 +22,7 @@ export default function SectionsScreen({ state, onAddPhoto, onNavigate }) {
             </div>
           </div>
         </div>
-        <button className="btn btn-ghost btn-sm" style={{ width: 'auto' }} onClick={() => onNavigate('start')}>
-          ← Edit
-        </button>
+        <div className="app-bar-step">Step 2/5</div>
       </div>
 
       {/* Progress */}
@@ -110,9 +108,9 @@ export default function SectionsScreen({ state, onAddPhoto, onNavigate }) {
         <button
           className="btn btn-primary"
           disabled={!allCaptured}
-          onClick={() => onNavigate('review')}
+          onClick={() => onNavigate('checklist')}
         >
-          {allCaptured ? 'Review & Rate →' : `${SECTIONS.length - capturedCount} section${SECTIONS.length - capturedCount !== 1 ? 's' : ''} remaining`}
+          {allCaptured ? 'Inspection Checklist →' : `${SECTIONS.length - capturedCount} section${SECTIONS.length - capturedCount !== 1 ? 's' : ''} remaining`}
         </button>
       </div>
 

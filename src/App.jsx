@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import StartScreen from './components/StartScreen'
 import SectionsScreen from './components/SectionsScreen'
+import ChecklistScreen from './components/ChecklistScreen'
 import ReviewScreen from './components/ReviewScreen'
 import ReportScreen from './components/ReportScreen'
 import { SECTIONS, CONDITION_SCORES } from './constants'
+import { initChecklist } from './checklistConstants'
 
-const STORAGE_KEY = 'ais_inspection_v1'
+const STORAGE_KEY = 'ais_inspection_v2'
 
 const initSections = () =>
   Object.fromEntries(
@@ -24,6 +26,7 @@ const defaultState = {
     date: new Date().toISOString().split('T')[0],
   },
   sections: initSections(),
+  checklist: initChecklist(),
   aiScore: null,
 }
 
@@ -32,21 +35,31 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultState
     const parsed = JSON.parse(raw)
-    // Merge to ensure new sections are present
     return {
       ...defaultState,
       ...parsed,
       sections: { ...initSections(), ...parsed.sections },
+      checklist: mergeChecklist(parsed.checklist),
     }
   } catch {
     return defaultState
   }
 }
 
+function mergeChecklist(saved) {
+  const fresh = initChecklist()
+  if (!saved) return fresh
+  const result = {}
+  for (const catId of Object.keys(fresh)) {
+    result[catId] = { ...fresh[catId], ...(saved[catId] ?? {}) }
+  }
+  return result
+}
+
 function saveState(state) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  } catch (e) {
+  } catch {
     console.warn('localStorage quota exceeded — photos may not persist after refresh')
   }
 }
@@ -61,10 +74,7 @@ export default function App() {
   const setScreen = (screen) => setState((prev) => ({ ...prev, screen }))
 
   const updateCarDetails = (updates) =>
-    setState((prev) => ({
-      ...prev,
-      carDetails: { ...prev.carDetails, ...updates },
-    }))
+    setState((prev) => ({ ...prev, carDetails: { ...prev.carDetails, ...updates } }))
 
   const addPhoto = (sectionId, dataUrl) =>
     setState((prev) => ({
@@ -93,9 +103,15 @@ export default function App() {
   const updateSection = (sectionId, updates) =>
     setState((prev) => ({
       ...prev,
-      sections: {
-        ...prev.sections,
-        [sectionId]: { ...prev.sections[sectionId], ...updates },
+      sections: { ...prev.sections, [sectionId]: { ...prev.sections[sectionId], ...updates } },
+    }))
+
+  const updateChecklist = (catId, itemId, value) =>
+    setState((prev) => ({
+      ...prev,
+      checklist: {
+        ...prev.checklist,
+        [catId]: { ...prev.checklist[catId], [itemId]: value },
       },
     }))
 
@@ -118,6 +134,7 @@ export default function App() {
     onAddPhoto: addPhoto,
     onRemovePhoto: removePhoto,
     onUpdateSection: updateSection,
+    onUpdateChecklist: updateChecklist,
     onNavigate: setScreen,
     onGenerateReport: generateReport,
     onNewInspection: startNewInspection,
@@ -125,10 +142,11 @@ export default function App() {
 
   return (
     <div className="app-root">
-      {state.screen === 'start' && <StartScreen {...sharedProps} />}
-      {state.screen === 'sections' && <SectionsScreen {...sharedProps} />}
-      {state.screen === 'review' && <ReviewScreen {...sharedProps} />}
-      {state.screen === 'report' && <ReportScreen {...sharedProps} />}
+      {state.screen === 'start'     && <StartScreen     {...sharedProps} />}
+      {state.screen === 'sections'  && <SectionsScreen  {...sharedProps} />}
+      {state.screen === 'checklist' && <ChecklistScreen {...sharedProps} />}
+      {state.screen === 'review'    && <ReviewScreen    {...sharedProps} />}
+      {state.screen === 'report'    && <ReportScreen    {...sharedProps} />}
     </div>
   )
 }
